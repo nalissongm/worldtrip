@@ -11,7 +11,10 @@
     "plugin:@typescript-eslint/recommended",
     "prettier",
     "plugin:prettier/recommended",
-    "next/core-web-vitals"
+    "next/core-web-vitals",
+    "plugin:@next/next/recommended",
+    "eslint:recommended",
+    "next"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
