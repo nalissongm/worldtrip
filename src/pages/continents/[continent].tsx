@@ -1,27 +1,17 @@
-import {
-  Box,
-  HStack,
-  Flex,
-  Heading,
-  Text,
-  Image,
-  Tooltip,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverArrow,
-  PopoverCloseButton,
-  PopoverHeader,
-  PopoverBody,
-} from "@chakra-ui/react";
+import { Box, HStack, Flex, Heading, Text, Image } from "@chakra-ui/react";
+
 import { GetStaticPaths, GetStaticProps } from "next";
 import Head from "next/head";
+import { useRouter } from "next/router";
+
 import { useRef } from "react";
-import { RichText } from "prismic-dom";
+
+import ContentLoader, { Code } from "react-content-loader";
 
 import { CardGrids } from "../../components/CardGrids";
-import { getPrismicClient } from "../../services/prismic";
+import { LoadingContentPage } from "../../components/LoadingContentPage";
 import { PopUp } from "../../components/PopUp";
+import { loadDataFromContinent } from "../../utils/loadDataFromContinent";
 
 type ImageData = {
   src: string;
@@ -51,6 +41,13 @@ interface ContinentProps {
 
 export default function Continent({ continent }: ContinentProps): JSX.Element {
   const initialFocusRef = useRef();
+  const { isFallback } = useRouter();
+
+  if (isFallback) {
+    return (
+      <LoadingContentPage backgroundColor="#EFEFEF" foregroundColor="#FBF5E4" />
+    );
+  }
 
   return (
     <>
@@ -161,50 +158,22 @@ export default function Continent({ continent }: ContinentProps): JSX.Element {
   );
 }
 
-export const getStaticPaths: GetStaticPaths = () => {
+export const getStaticPaths: GetStaticPaths = async () => {
   return {
     paths: [{ params: { continent: "europe" } }],
-    fallback: "blocking",
+    fallback: true,
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { continent: uuid } = params;
 
-  const prismic = getPrismicClient();
-
-  const { data } = await prismic.getByUID<any>("continent", String(uuid), {});
-
-  const continent = {
-    title: RichText.asText(data.title),
-    text: RichText.asText(data.text),
-    banner: {
-      src: data.banner.url,
-      alt: data.banner.alt,
-    },
-    cities: data.cities.map((city) => {
-      return {
-        city: city.city,
-        country: city.country,
-        banner: {
-          src: city.banner.url,
-          alt: city.banner.alt,
-        },
-        flag: {
-          src: city.flag.url,
-          alt: city.flag.alt,
-        },
-      };
-    }),
-    amount_contries: data.amount_contries,
-    total: data.total,
-    cities_in_rank: data.cities_in_rack,
-  };
+  const continent = await loadDataFromContinent(String(uuid));
 
   return {
     props: {
       continent,
     },
-    revalidate: 60 * 60 * 24, // 24 hours
+    revalidate: 10, // 24 hours
   };
 };
